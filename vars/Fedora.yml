@@ -1,0 +1,29 @@
+---
+# role: ansible-role-samba
+# file: vars/Fedora.yml
+
+# All variables that are different between roles in at least one os.
+samba_role_vars:
+  'standalone server':
+    disabled_services: []
+    enabled_services:
+      - samba
+    packages:
+      - samba
+  'domain member':
+    disabled_services: []
+    enabled_services:
+      - samba
+    packages: []
+  'domain controller':
+    disabled_services: []
+    enabled_services:
+      - samba
+    packages:
+      - acl
+      - attr
+      - dnsutils
+      - samba
+      - samba-dc
+      # - samba-dc-bind-dlz
+      - krb5-workstation

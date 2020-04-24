@@ -1,0 +1,64 @@
+---
+# role: ansible-role-samba
+# file: tasks/main.yml
+
+- name: "Tasks for role ansible-role-samba"
+  block:
+    - name: "Set os_family dependent variables"
+      include_vars: '{{ ansible_os_family }}.yml'
+
+    - name: "Set distribution dependent variables"
+      include_vars: '{{ vars_file }}'
+      with_first_found:
+        - files:
+            - '{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml'
+            - '{{ ansible_distribution }}.yml'
+            - '{{ ansible_os_family }}-{{ ansible_distribution_major_version }}.yml'
+          skip: true
+      loop_control:
+        loop_var: vars_file
+
+    - name: "Install packages for ansible-role-samba"
+      package:
+        name: "{{ samba_role_vars[samba_role].packages }}"
+        state: present
+      when: samba_role_vars[samba_role].enabled_services | length > 0
+
+    - name: "Disable conflicting services"
+      service:
+        name: "{{ item }}"
+        enabled: no
+        state: stopped
+      loop: "{{ samba_role_vars[samba_role].disabled_services }}"
+
+    - name: "Systemd | Mask conflicting services"
+      systemd:
+        daemon_reload: yes
+        name: "{{ item }}"
+        enabled: no
+        masked: yes
+        state: stopped
+      loop: "{{ samba_role_vars[samba_role].disabled_services }}"
+      when: ansible_service_mgr == 'systemd'
+
+    - name: "Include tasks for setting up a {{ samba_role }}"
+      include_tasks: "{{ samba_role }}.yml"
+      when: samba_role_vars[samba_role].enabled_services | length > 0
+
+    - name: "Systemd | Unmask required services"
+      systemd:
+        name: "{{ item }}"
+        masked: no
+      loop: "{{ samba_role_vars[samba_role].enabled_services }}"
+      when: ansible_service_mgr == 'systemd'
+
+    - name: "Enable required services"
+      service:
+        name: "{{ item }}"
+        enabled: yes
+      loop: "{{ samba_role_vars[samba_role].enabled_services }}"
+  when: samba_role_enabled | bool
+
+- name: debug
+  debug:
+    msg: "{{ ansible_distribution }}"

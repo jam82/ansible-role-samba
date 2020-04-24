@@ -1,0 +1,22 @@
+# {{ template_destpath }}
+# vi: ft=samba
+# {{ ansible_managed }}
+
+# Global parameters
+[global]
+    dedicated keytab file = /etc/krb5.keytab
+    dns forwarder = {{ samba_ad.dns_forwarder }}
+    idmap_ldb:use rfc2307 = yes
+    kerberos method = secrets and keytab
+    netbios name = {{ ansible_hostname }}
+    realm = {{ samba_ad.realm | upper }}
+    server role = active directory domain controller
+    workgroup = {{ samba_workgroup | upper }}
+# Netlogon share
+[netlogon]
+    path = /var/lib/samba/sysvol/{{ samba_ad.realm | lower }}/scripts
+    read only = No
+# Sysvol share
+[sysvol]
+    path = /var/lib/samba/sysvol
+    read only = No

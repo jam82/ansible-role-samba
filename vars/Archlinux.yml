@@ -1,0 +1,30 @@
+---
+# role: ansible-role-samba
+# file: vars/Archlinux.yml
+
+# All variables that are different between roles in at least one os.
+samba_role_vars:
+  'standalone server':
+    disabled_services: []
+    enabled_services:
+      - samba
+    packages:
+      - samba
+  'domain member':
+    disabled_services: []
+    enabled_services: []
+    packages: []
+  'domain controller':
+    disabled_services: []
+    enabled_services:
+      - smb
+      - nmb
+    packages:
+      - acl
+      - attr
+      - bind-tools
+      - dnsutils
+      - krb5
+      - python-dnspython
+      - openresolv
+      - samba

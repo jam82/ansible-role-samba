@@ -1,0 +1,9 @@
+---
+# role: ansible-role-samba
+# file: handlers/main.yml
+
+- name: restart samba
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop: "{{ samba_role_vars[samba_role].enabled_services }}"

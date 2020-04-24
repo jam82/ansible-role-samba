@@ -1,0 +1,8 @@
+# {{ template_destpath }}
+# vi: ft=conf
+# {{ ansible_managed }}
+
+search {{ samba_domain | lower }}
+{% for nameserver in samba_ad.dns_nameservers %}
+nameserver {{ nameserver }}
+{% endfor %}

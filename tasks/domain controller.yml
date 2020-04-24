@@ -1,0 +1,60 @@
+---
+# role: ansible-role-samba
+# file: tasks/domain controller.yml
+
+- name: "Check if krb5.conf exists"
+  stat:
+    path: '/var/lib/samba/private/krb5.conf'
+  register: samba_krb5
+
+- name: "Remove /etc/samba/smb.conf if krb5.conf does not exists"
+  file:
+    path: '/etc/samba/smb.conf'
+    state: absent
+  when: not samba_krb5.stat.exists | bool
+
+- name: "Alpine | Copy openrc-init-file for domain controller"
+  template:
+    src: "etc/init.d/samba.j2"
+    dest: "/etc/init.d/samba"
+    mode: '0755'
+  when: ansible_os_family == 'Alpine'
+
+- name: "Provision Samba DC"
+  shell: |
+    samba-tool domain provision \
+    --server-role=dc \
+    --use-rfc2307 \
+    --dns-backend={{ samba_ad.dns_backend }} \
+    --realm={{ samba_ad.realm | upper }} \
+    --domain={{ samba_ad.domain | upper }} \
+    --adminpass={{ samba_ad.admin_password }}
+  args:
+    creates: '/var/lib/samba/private/krb5.conf'
+
+- name: "Write smb.conf"
+  template:
+    src: etc/samba/smb.conf.j2
+    dest: /etc/samba/smb.conf
+    mode: '0640'
+    validate: testparm -s %s
+  notify: restart samba
+
+- name: "Write resolv.conf"
+  template:
+    src: etc/resolv.conf.j2
+    dest: "/etc/resolv.conf"
+    mode: '0644'
+  when: ansible_os_family == 'Alpine'
+    and (ansible_virtualization_role != 'guest'
+    or (ansible_virtualization_type != 'docker'
+    or ansible_virtualization_type != 'podman'))
+
+- name: "Copy Kerberos Configuration to /etc"
+  copy:
+    src: '/var/lib/samba/private/krb5.conf'
+    dest: '/etc/krb5.conf'
+    remote_src: yes
+
+# - name: "Include tasks for AD DNS configuration"
+#   include_tasks: ad_dns.yml

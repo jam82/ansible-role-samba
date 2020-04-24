@@ -1,0 +1,85 @@
+---
+# role: ansible-role-samba
+# file: molecule/dc/molecule.yml
+
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+driver:
+  name: docker
+lint: |
+  set -e
+  yamllint .
+  ansible-lint
+  flake8
+platforms:
+  - name: dc-alpine
+    image: ${MOLECULE_DIST:-"jam82/molecule-alpine:3.11"}
+    command: ${MOLECULE_DOCKER_CMD:-""}
+    pre_build_image: True
+    privileged: True
+    tmpfs:
+      - /tmp
+      - /run
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+  - name: dc-debian
+    image: ${MOLECULE_DIST:-"jam82/molecule-debian:10"}
+    command: ${MOLECULE_DOCKER_CMD:-""}
+    pre_build_image: True
+    privileged: True
+    tmpfs:
+      - /tmp
+      - /run
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+  - name: dc-fedora
+    image: ${MOLECULE_DIST:-"jam82/molecule-fedora:latest"}
+    command: ${MOLECULE_DOCKER_CMD:-""}
+    pre_build_image: True
+    privileged: True
+    tmpfs:
+      - /tmp
+      - /run
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+  - name: dc-ubuntu1804
+    image: ${MOLECULE_DIST:-"jam82/molecule-ubuntu:18.04"}
+    command: ${MOLECULE_DOCKER_CMD:-""}
+    pre_build_image: True
+    privileged: True
+    tmpfs:
+      - /tmp
+      - /run
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+  - name: dc-ubuntu2004
+    image: ${MOLECULE_DIST:-"jam82/molecule-ubuntu:20.04"}
+    command: ${MOLECULE_DOCKER_CMD:-""}
+    pre_build_image: True
+    privileged: True
+    tmpfs:
+      - /tmp
+      - /run
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+provisioner:
+  name: ansible
+  log: True
+  playbooks:
+    prepare: ../resources/playbooks/prepare.yml
+    converge: ../resources/playbooks/converge.yml
+  inventory:
+    group_vars:
+      all:
+        samba_role_enabled: True
+        samba_role: "domain controller"
+verifier:
+  name: testinfra
+  env:
+    PYTHONWARNINGS: "ignore"
+  directory: ../resources/tests
+  options:
+    v: True
+    sudo: True

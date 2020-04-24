@@ -1,0 +1,50 @@
+---
+# role: ansible-role-samba
+# file: molecule/kvm/molecule.yml
+
+dependency:
+  name: galaxy
+  options:
+    role-file: molecule/resources/roles/requirements.yml
+driver:
+  name: vagrant
+  provider:
+    name: libvirt
+    type: libvirt
+    options:
+      memory: 2048
+      cpus: 2
+lint: |
+  set -e
+  yamllint .
+  ansible-lint
+  flake8
+platforms:
+  - name: samba-arch
+    box: "archlinux/archlinux"
+  - name: samba-centos8
+    box: "centos/8"
+  - name: samba-debian10
+    box: "debian/buster64"
+  - name: samba-fedora31
+    box: "fedora/31-cloud-base"
+  - name: samba-ubuntu1804
+    box: "generic/ubuntu1804"
+provisioner:
+  name: ansible
+  log: True
+  playbooks:
+    prepare: ../resources/playbooks/prepare.yml
+    converge: ../resources/playbooks/converge.yml
+  inventory:
+    group_vars:
+      all:
+        samba_role_enabled: True
+verifier:
+  name: testinfra
+  env:
+    PYTHONWARNINGS: "ignore"
+  directory: ../resources/tests
+  options:
+    v: True
+    sudo: True

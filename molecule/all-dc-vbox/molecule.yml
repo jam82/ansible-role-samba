@@ -1,0 +1,70 @@
+---
+# role: ansible-role-samba
+# file: molecule/vbox/molecule.yml
+
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+    type: virtualbox
+lint: |
+  set -e
+  yamllint .
+  ansible-lint
+  flake8
+platforms:
+  - name: samba-alpine
+    box: "generic/alpine310"
+    cpus: 4
+    memory: 2048
+  - name: samba-debian9
+    box: "debian/stretch64"
+    cpus: 4
+    memory: 2048
+  - name: samba-debian10
+    box: "debian/buster64"
+    cpus: 4
+    memory: 2048
+  - name: samba-fedora31
+    box: "fedora/31-cloud-base"
+    cpus: 4
+    memory: 2048
+  - name: samba-opensuse-leap
+    box: "bento/opensuse-leap-15.1"
+    cpus: 4
+    memory: 2048
+  - name: samba-ubuntu1804
+    box: "ubuntu/bionic64"
+    cpus: 4
+    memory: 2048
+  - name: samba-ubuntu2004
+    box: "ubuntu/focal64"
+    cpus: 4
+    memory: 2048
+provisioner:
+  name: ansible
+  log: True
+  playbooks:
+    prepare: ../resources/playbooks/prepare.yml
+    converge: ../resources/playbooks/converge.yml
+  inventory:
+    group_vars:
+      all:
+        hosts_role_enabled: True
+        hosts_ip_static: True
+        hosts_domain: "test.lan"
+        samba_role_enabled: True
+        samba_role: "domain controller"
+        samba_domain: "test.lan"
+verifier:
+  name: testinfra
+  env:
+    PYTHONWARNINGS: "ignore"
+  directory: ../resources/tests
+  options:
+    v: True
+    sudo: True

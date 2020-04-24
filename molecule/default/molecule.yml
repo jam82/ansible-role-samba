@@ -1,0 +1,82 @@
+---
+# role: ansible-role-samba
+# file: molecule/default/molecule.yml
+
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+driver:
+  name: docker
+lint: |
+  set -e
+  yamllint .
+  ansible-lint
+  flake8
+platforms:
+  - name: samba-dc
+    groups:
+      - samba_domain_controllers
+    image: ${MOLECULE_DIST:-"jam82/molecule-alpine:3.11"}
+    command: ${MOLECULE_DOCKER_CMD:-""}
+    pre_build_image: True
+    privileged: True
+    dns_servers:
+      - 172.17.0.2
+      - 9.9.9.9
+    etc_hosts: "{'samba-dc.test.lan': '172.17.0.2', 'samba-dm.test.lan': '172.17.0.3'}"
+    exposed_ports:
+      - '53'
+      - '135'
+      - '137/udp'
+      - '138/udp'
+      - '139'
+      - '389'
+      - '445'
+      - '464'
+      - '636'
+    tmpfs:
+      - /tmp
+      - /run
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+  - name: samba-dm
+    groups:
+      - samba_domain_members
+    image: ${MOLECULE_DIST:-"jam82/molecule-alpine:3.11"}
+    command: ${MOLECULE_DOCKER_CMD:-""}
+    pre_build_image: True
+    privileged: True
+    dns_servers:
+      - 172.17.0.2
+      - 9.9.9.9
+    etc_hosts: "{'samba-dc.test.lan': '172.17.0.2', 'samba-dm.test.lan': '172.17.0.3'}"
+    tmpfs:
+      - /tmp
+      - /run
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+provisioner:
+  name: ansible
+  log: True
+  playbooks:
+    prepare: ../resources/playbooks/prepare.yml
+    converge: ../resources/playbooks/converge.yml
+  inventory:
+    group_vars:
+      all:
+        samba_role_enabled: True
+        samba_domain: test.lan
+    host_vars:
+      samba-dc:
+        samba_role: "domain controller"
+      samba-dm:
+        samba_role: "domain member"
+verifier:
+  name: testinfra
+  env:
+    PYTHONWARNINGS: "ignore"
+  directory: ../resources/tests
+  options:
+    v: True
+    sudo: True

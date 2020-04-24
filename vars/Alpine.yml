@@ -1,0 +1,35 @@
+---
+# role: ansible-role-samba
+# file: vars/Alpine.yml
+
+# All variables that are different between roles in at least one os.
+samba_role_vars:
+  'standalone server':
+    disabled_services: []
+    enabled_services:
+      - samba
+    packages:
+      - samba-common-tools
+      - samba-client
+      - samba-server
+  'domain member':
+    disabled_services: []
+    enabled_services:
+      - samba
+    packages:
+      - bind-tools
+      - krb5
+      - py3-dnspython
+      - py3-netaddr
+      - samba-winbind
+  'domain controller':
+    disabled_services: []
+    enabled_services:
+      - 'samba'
+    packages:
+      - bind-tools
+      - krb5
+      - py3-dnspython
+      - py3-netaddr
+      - samba-dc
+      - samba-winbind

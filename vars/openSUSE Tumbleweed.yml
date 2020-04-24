@@ -1,0 +1,30 @@
+---
+# role: ansible-role-samba
+# file: vars/Suse.yml
+
+# All variables that are different between roles in at least one os.
+samba_role_vars:
+  'standalone server':
+    disabled_services: []
+    enabled_services:
+      - smb
+      - nmb
+    packages:
+      - samba
+  'domain member':
+    disabled_services: []
+    enabled_services:
+      - smb
+      - nmb
+    packages: []
+  'domain controller':
+    disabled_services: []
+    enabled_services:
+      - smb
+      - nmb
+    packages:
+      - acl
+      - attr
+      - bind-utils
+      - krb5
+      - samba-ad-dc

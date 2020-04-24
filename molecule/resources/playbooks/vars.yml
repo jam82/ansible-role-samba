@@ -1,0 +1,7 @@
+---
+# role: ansible-role-samba
+# file: molecule/resources/playbooks/vars.yml
+
+ansible_interpreter_python: auto_silent
+
+samba_role_enabled: True

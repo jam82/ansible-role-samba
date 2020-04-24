@@ -1,0 +1,10 @@
+---
+# role: ansible-role-samba
+# file: tasks/resolv.yml
+
+- name: "Alpine | Modify resolv.conf"
+  template:
+    src: etc/resolv.conf.j2
+    dest: "/etc/resolv.conf"
+    mode: '0644'
+  when: ansible_os_family == 'Alpine'
