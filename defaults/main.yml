@@ -6,18 +6,6 @@
 # Checked in tasks/main.yml which includes tasks.yml if enabled.
 samba_role_enabled: False
 
-# This uses the ansible fact ansible_domain as samba_domain/realm by default.
-# Upper and lowercase conversion is done automatically as needed.
-# E.g. your domain is homebase.lan, then this is samba doimain/realm.
-# If it is home.example.com, etc...
-samba_domain: "{{ ansible_domain | d('localhost.localdomain') }}"
-
-# This uses the first part of ansible_domain as workgroup/ad domain.
-# Upper and lowercase conversion is done automatically as needed.
-# For domain homebase.lan, homebase is your workgroup.
-# For home.example.com, home is your workgroup/ad domain.
-samba_workgroup: "{{ (samba_domain | splitext)[0] }}"
-
 # Role as parameter "server role" in smb.conf.
 # Supported options are:
 # "standalone server" => samba standalone file server without domain config
@@ -25,7 +13,19 @@ samba_workgroup: "{{ (samba_domain | splitext)[0] }}"
 # "domain controller" => ad domain controller
 samba_role: "standolone server"
 
-# Active Directory parameters for setting up samba as ADDC as dict.
+# This uses the ansible fact ansible_domain as samba_domain/realm by default.
+# Upper and lowercase conversion is done automatically as needed.
+# E.g. your domain is homebase.lan, then this is samba domain/realm.
+# If ansible_domain = home.example.com, this is it, and so on...
+samba_domain: "{{ ansible_domain | d(ansible_hostname) }}"
+
+# This uses the first part of ansible_domain as workgroup/ad domain.
+# Upper and lowercase conversion is done automatically as needed.
+# For domain homebase.lan, homebase is your workgroup.
+# For home.example.com, home is your workgroup/ad domain.
+samba_workgroup: "{{ samba_domain | regex_replace('^(.*)\\.(.*)', '\\1') }}"
+
+# Active Directory parameters for setting up samba as AD DC/Member as dict.
 samba_ad:
   admin_password: "Chang3MeN0w!"
   dns_backend: 'SAMBA_INTERNAL'  # can be SAMBA_INTERNAL or BIND9_DLZ
@@ -34,3 +34,22 @@ samba_ad:
     - "{{ ansible_default_ipv4.address }}"  # List: IP of DC or multiple DC IPs.
   domain: "{{ samba_workgroup }}"
   realm: "{{ samba_domain }}"
+  site: "{{ samba_domain | regex_replace('^(.*)\\.(.*)', '\\2') }}"
+  complexity: 'on'
+  min_pwd_age: 1
+  max_pwd_age: 768
+  min_pwd_len: 12
+  history_len: 10
+
+samba_groups: []
+# - name: test-group01
+#   members:
+#     - test01
+#     - test02
+
+samba_users: []
+# - name: test01
+#   password: Sup3rS@fe!
+#   mustchange: true
+# - name: test02
+#   password: Sup3rS@fe!

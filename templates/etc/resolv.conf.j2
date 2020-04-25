@@ -2,7 +2,12 @@
 # vi: ft=conf
 # {{ ansible_managed }}
 
+domain {{ samba_domain | lower }}
 search {{ samba_domain | lower }}
+{% if samba_role == 'domain controller'%}
+nameserver 127.0.0.1
+{% else %}
 {% for nameserver in samba_ad.dns_nameservers %}
 nameserver {{ nameserver }}
 {% endfor %}
+{% endif %}

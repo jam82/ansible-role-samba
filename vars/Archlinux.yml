@@ -2,6 +2,12 @@
 # role: ansible-role-samba
 # file: vars/Archlinux.yml
 
+# resolv.conf or config file location and associated service
+samba_resolv_conf:
+  location: /etc/resolv.conf.head
+  services:
+    - openresolv
+
 # All variables that are different between roles in at least one os.
 samba_role_vars:
   'standalone server':
@@ -15,7 +21,8 @@ samba_role_vars:
     enabled_services: []
     packages: []
   'domain controller':
-    disabled_services: []
+    disabled_services:
+      - systemd-resolved
     enabled_services:
       - smb
       - nmb
@@ -26,5 +33,5 @@ samba_role_vars:
       - dnsutils
       - krb5
       - python-dnspython
-      - openresolv
+      # - openresolv
       - samba

@@ -2,6 +2,12 @@
 # role: ansible-role-samba
 # file: vars/Suse.yml
 
+# resolv.conf or config file location and associated service
+samba_resolv_conf:
+  location: /etc/sysconfig/network/config
+  services:
+    - netconfig
+
 # All variables that are different between roles in at least one os.
 samba_role_vars:
   'standalone server':
@@ -23,6 +29,7 @@ samba_role_vars:
     disabled_services:
       - smb
       - nmb
+      - systemd-resolved
     enabled_services:
       - samba-ad-dc
     packages:

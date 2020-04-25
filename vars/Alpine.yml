@@ -2,6 +2,11 @@
 # role: ansible-role-samba
 # file: vars/Alpine.yml
 
+# resolv.conf or config file location and associated service
+samba_resolv_conf:
+  location: /etc/resolv.conf
+  services: []
+
 # All variables that are different between roles in at least one os.
 samba_role_vars:
   'standalone server':

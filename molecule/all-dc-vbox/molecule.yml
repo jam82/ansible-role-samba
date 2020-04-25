@@ -17,31 +17,31 @@ lint: |
   ansible-lint
   flake8
 platforms:
-  - name: samba-alpine
+  - name: dc-alpine
     box: "generic/alpine310"
     cpus: 4
     memory: 2048
-  - name: samba-debian9
+  - name: dc-deb9
     box: "debian/stretch64"
     cpus: 4
     memory: 2048
-  - name: samba-debian10
+  - name: dc-deb10
     box: "debian/buster64"
     cpus: 4
     memory: 2048
-  - name: samba-fedora31
+  - name: dc-f31
     box: "fedora/31-cloud-base"
     cpus: 4
     memory: 2048
-  - name: samba-opensuse-leap
+  - name: dc-leap151
     box: "bento/opensuse-leap-15.1"
     cpus: 4
     memory: 2048
-  - name: samba-ubuntu1804
+  - name: dc-u1804
     box: "ubuntu/bionic64"
     cpus: 4
     memory: 2048
-  - name: samba-ubuntu2004
+  - name: dc-u2004
     box: "ubuntu/focal64"
     cpus: 4
     memory: 2048
@@ -60,6 +60,27 @@ provisioner:
         samba_role_enabled: True
         samba_role: "domain controller"
         samba_domain: "test.lan"
+        samba_ad:
+          admin_password: "Chang3MeN0w!"
+          dns_backend: 'SAMBA_INTERNAL'  # can be SAMBA_INTERNAL or BIND9_DLZ
+          dns_forwarder: '9.9.9.9'
+          dns_nameservers:
+            - "{{ ansible_default_ipv4.address }}"  # List: IP of DC or multiple DC IPs.
+          domain: "test"
+          realm: "test.lan"
+          site: "lan"
+          complexity: 'on'
+          min_pwd_age: 1
+          max_pwd_age: 768
+          min_pwd_len: 12
+          history_len: 10
+        samba_users:
+          - name: test1
+            password: Sup3rS@fe123!
+        samba_groups:
+          - name: test-group1
+            members:
+              - test1
 verifier:
   name: testinfra
   env:

@@ -31,8 +31,11 @@ samba_role_vars:
       - bind-utils
       - gvfs-backend-samba
       - krb5
+      - krb5-client
+      - krb5-server
       - python-dnspython
       - samba
       - samba-ad-dc
       - samba-dsdb-modules
       - samba-python3
+      - samba-winbind

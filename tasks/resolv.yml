@@ -2,9 +2,48 @@
 # role: ansible-role-samba
 # file: tasks/resolv.yml
 
-- name: "Alpine | Modify resolv.conf"
-  template:
-    src: etc/resolv.conf.j2
-    dest: "/etc/resolv.conf"
-    mode: '0644'
-  when: ansible_os_family == 'Alpine'
+- name: "Modify resolv.conf settings"
+  block:
+    - name: "Write {{ samba_resolv_conf.location }}"
+      template:
+        src: etc/resolv.conf.j2
+        dest: /etc/resolv.conf  # "{{ samba_resolv_conf.location }}"
+        mode: '0644'
+      register: samba_resolver
+  when: ansible_virtualization_role == 'host'
+    or (ansible_virtualization_role == 'guest'
+    and not (ansible_virtualization_type == 'docker'
+    or ansible_virtualization_type == 'lxc'
+    or ansible_virtualization_type == 'podman'))
+
+  #   - name: "Restart resolv.conf associated services"
+  #     service:
+  #       name: "{{ item }}"
+  #       state: restarted
+  #     loop: "{{ samba_resolv_conf.services }}"
+  #     when: samba_resolver is changed
+  # when: ansible_os_family != 'RedHat'
+  #   and ansible_os_family != 'Suse'
+
+# - name: "RedHat | Modify resolv.conf settings"
+#   nmcli:
+#     conn_name: "{{ item }}"
+#     dns4: "{{ samba_ad.dns_nameservers[:3] }}"
+#     dns4_search: "{{ samba_domain }}"
+#     state: present
+#   loop: "{{ ansible_interfaces }}"
+#   when: ansible_os_family == 'RedHat'
+
+# - name: "Suse | Modify resolv.conf settings"
+#   block:
+#     - name: "Change DNS search list"
+#       command: "yast dns edit search={{ samba_domain }}"
+#       changed_when: False
+
+#     - name: "Change DNS nameservers"
+#       command: "yast dns edit nameserver{{ ns_idx + 1 }}={{ item }}"
+#       changed_when: False
+#       loop: "{{ samba_ad.dns_nameservers }}"
+#       loop_control:
+#         index_var: ns_idx
+#   when: ansible_os_family == 'Suse'

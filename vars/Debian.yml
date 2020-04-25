@@ -2,6 +2,12 @@
 # role: ansible-role-samba
 # file: vars/Debian.yml
 
+# resolv.conf or config file location and associated service
+samba_resolv_conf:
+  location: /etc/resolvconf/resolv.conf.d/head
+  services:
+    - resolvconf
+
 # All variables that are different between roles in at least one os.
 samba_role_vars:
   'standalone server':
@@ -36,6 +42,7 @@ samba_role_vars:
       - smbd
       - nmbd
       - winbind
+      - systemd-resolved
     enabled_services:
       - 'samba-ad-dc'
     packages:
@@ -45,6 +52,7 @@ samba_role_vars:
       - krb5-config
       - krb5-user
       - libpam-krb5
+      # - resolvconf
       - samba
       - samba-dsdb-modules
       - samba-vfs-modules

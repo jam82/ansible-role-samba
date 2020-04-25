@@ -69,7 +69,33 @@ provisioner:
         samba_domain: test.lan
     host_vars:
       samba-dc:
+        hosts_role_enabled: True
+        hosts_ip_static: True
+        hosts_domain: "test.lan"
+        samba_role_enabled: True
         samba_role: "domain controller"
+        samba_domain: "test.lan"
+        samba_ad:
+          admin_password: "Chang3MeN0w!"
+          dns_backend: 'SAMBA_INTERNAL'  # can be SAMBA_INTERNAL or BIND9_DLZ
+          dns_forwarder: '9.9.9.9'
+          dns_nameservers:
+            - "{{ ansible_default_ipv4.address }}"  # List: IP of DC or multiple DC IPs.
+          domain: "test"
+          realm: "test.lan"
+          site: "lan"
+          complexity: 'on'
+          min_pwd_age: 1
+          max_pwd_age: 768
+          min_pwd_len: 12
+          history_len: 10
+        samba_users:
+          - name: test1
+            password: Sup3rS@fe123!
+        samba_groups:
+          - name: test-group1
+            members:
+              - test1
       samba-dm:
         samba_role: "domain member"
 verifier:

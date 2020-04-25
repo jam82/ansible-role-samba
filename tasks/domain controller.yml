@@ -25,7 +25,8 @@
     samba-tool domain provision \
     --server-role=dc \
     --use-rfc2307 \
-    --dns-backend={{ samba_ad.dns_backend }} \
+    --dns-backend={{ samba_ad.dns_backend | upper }} \
+    --site={{ samba_ad.site | upper }} \
     --realm={{ samba_ad.realm | upper }} \
     --domain={{ samba_ad.domain | upper }} \
     --adminpass={{ samba_ad.admin_password }}
@@ -40,15 +41,8 @@
     validate: testparm -s %s
   notify: restart samba
 
-- name: "Write resolv.conf"
-  template:
-    src: etc/resolv.conf.j2
-    dest: "/etc/resolv.conf"
-    mode: '0644'
-  when: ansible_os_family == 'Alpine'
-    and (ansible_virtualization_role != 'guest'
-    or (ansible_virtualization_type != 'docker'
-    or ansible_virtualization_type != 'podman'))
+- name: "Include tasks for resolv.conf configuration"
+  include_tasks: resolv.yml
 
 - name: "Copy Kerberos Configuration to /etc"
   copy:
@@ -56,5 +50,44 @@
     dest: '/etc/krb5.conf'
     remote_src: yes
 
-# - name: "Include tasks for AD DNS configuration"
-#   include_tasks: ad_dns.yml
+- name: "Include tasks for AD DNS configuration"
+  include_tasks: dns.yml
+
+- name: "Disable expiry of Administrator account"
+  command: samba-tool user setexpiry Administrator --noexpiry
+  changed_when: False
+
+- name: "Set default password expiration period and minimum length"
+  command: |
+    samba-tool domain passwordsettings set
+    --complexity={{ samba_ad.complexity }}
+    --min-pwd-age={{ samba_ad.min_pwd_age }}
+    --max-pwd-age={{ samba_ad.max_pwd_age }}
+    --min-pwd-length={{ samba_ad.min_pwd_len }}
+    --history-length={{ samba_ad.history_len }}
+  changed_when: False
+
+- name: "Create domain users"
+  command: "samba-tool user create {{ item.name }} {{ item.password }}"
+  loop: "{{ samba_users }}"
+  register: samba_user_result
+  changed_when: ("successfully" in samba_user_result.stdout)
+  failed_when: samba_user_result.rc > 0
+    and not ("exists" in samba_user_result.stderr)
+
+- name: "Create domain groups"
+  command: "samba-tool group add {{ item.name }}"
+  loop: "{{ samba_groups }}"
+  register: samba_group_result
+  changed_when: ("successfully" in samba_group_result.stdout)
+  failed_when: samba_group_result.rc > 0
+    and not ("exists" in samba_group_result.stderr)
+
+- name: "Add Domain Group Members"
+  command: "samba-tool group addmembers {{ item.name }} {{ item.members | join(',') }}"
+  loop: "{{ samba_groups }}"
+  register: samba_member_result
+  changed_when: False
+  failed_when: samba_member_result.rc > 0
+    and not ("exists" in samba_member_result.stderr)
+

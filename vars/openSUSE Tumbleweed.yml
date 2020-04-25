@@ -22,6 +22,7 @@ samba_role_vars:
     enabled_services:
       - smb
       - nmb
+      - systemd-resolved
     packages:
       - acl
       - attr

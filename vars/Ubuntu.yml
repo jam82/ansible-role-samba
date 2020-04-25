@@ -36,6 +36,7 @@ samba_role_vars:
       - smbd
       - nmbd
       - winbind
+      - systemd-resolved
     enabled_services:
       - 'samba-ad-dc'
     packages:
@@ -45,6 +46,7 @@ samba_role_vars:
       - krb5-config
       - krb5-user
       - libpam-krb5
+      # - resolvconf
       - samba
       - samba-dsdb-modules
       - samba-vfs-modules

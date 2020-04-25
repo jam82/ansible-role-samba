@@ -41,10 +41,6 @@
       loop: "{{ samba_role_vars[samba_role].disabled_services }}"
       when: ansible_service_mgr == 'systemd'
 
-    - name: "Include tasks for setting up a {{ samba_role }}"
-      include_tasks: "{{ samba_role }}.yml"
-      when: samba_role_vars[samba_role].enabled_services | length > 0
-
     - name: "Systemd | Unmask required services"
       systemd:
         name: "{{ item }}"
@@ -52,13 +48,13 @@
       loop: "{{ samba_role_vars[samba_role].enabled_services }}"
       when: ansible_service_mgr == 'systemd'
 
+    - name: "Include tasks for setting up a {{ samba_role }}"
+      include_tasks: "{{ samba_role }}.yml"
+      when: samba_role_vars[samba_role].enabled_services | length > 0
+
     - name: "Enable required services"
       service:
         name: "{{ item }}"
         enabled: yes
       loop: "{{ samba_role_vars[samba_role].enabled_services }}"
   when: samba_role_enabled | bool
-
-- name: debug
-  debug:
-    msg: "{{ ansible_distribution }}"

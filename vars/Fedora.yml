@@ -16,7 +16,8 @@ samba_role_vars:
       - samba
     packages: []
   'domain controller':
-    disabled_services: []
+    disabled_services:
+      - systemd-resolved
     enabled_services:
       - samba
     packages:
@@ -24,6 +25,7 @@ samba_role_vars:
       - attr
       - dnsutils
       - samba
+      - samba-client
       - samba-dc
       # - samba-dc-bind-dlz
       - krb5-workstation
