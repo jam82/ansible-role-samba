@@ -2,38 +2,38 @@
 # role: ansible-role-samba
 # file: tasks/domain controller.yml
 
-- name: "Check if krb5.conf exists"
+- name: "DC | Check if krb5.conf exists"
   stat:
     path: '/var/lib/samba/private/krb5.conf'
   register: samba_krb5
 
-- name: "Remove /etc/samba/smb.conf if krb5.conf does not exists"
+- name: "DC | Remove /etc/samba/smb.conf if krb5.conf does not exists"
   file:
     path: '/etc/samba/smb.conf'
     state: absent
   when: not samba_krb5.stat.exists | bool
 
-- name: "Alpine | Copy openrc-init-file for domain controller"
+- name: "DC | Alpine | Copy openrc-init-file for domain controller"
   template:
     src: "etc/init.d/samba.j2"
     dest: "/etc/init.d/samba"
     mode: '0755'
   when: ansible_os_family == 'Alpine'
 
-- name: "Provision Samba DC"
+- name: "DC | Provision"
   shell: |
     samba-tool domain provision \
     --server-role=dc \
     --use-rfc2307 \
-    --dns-backend={{ samba_ad.dns_backend | upper }} \
-    --site={{ samba_ad.site | upper }} \
-    --realm={{ samba_ad.realm | upper }} \
-    --domain={{ samba_ad.domain | upper }} \
-    --adminpass={{ samba_ad.admin_password }}
+    --dns-backend={{ samba_ad_dns_backend | upper }} \
+    {{ '--site=' + (samba_ad_site | upper) if samba_ad_site_enabled else '' }} \
+    --realm={{ samba_ad_realm | upper }} \
+    --domain={{ samba_ad_domain | upper }} \
+    --adminpass={{ samba_ad_admin_password }}
   args:
     creates: '/var/lib/samba/private/krb5.conf'
 
-- name: "Write smb.conf"
+- name: "DC | Write smb.conf"
   template:
     src: etc/samba/smb.conf.j2
     dest: /etc/samba/smb.conf
@@ -41,53 +41,28 @@
     validate: testparm -s %s
   notify: restart samba
 
-- name: "Include tasks for resolv.conf configuration"
+- name: "DC | Include tasks for resolv.conf configuration"
   include_tasks: resolv.yml
 
-- name: "Copy Kerberos Configuration to /etc"
+- name: "DC | Copy Kerberos Configuration to /etc"
   copy:
     src: '/var/lib/samba/private/krb5.conf'
     dest: '/etc/krb5.conf'
     remote_src: yes
 
-- name: "Include tasks for AD DNS configuration"
+- name: "DC | Include tasks for AD DNS configuration"
   include_tasks: dns.yml
 
-- name: "Disable expiry of Administrator account"
+- name: "DC | Disable expiry of Administrator account"
   command: samba-tool user setexpiry Administrator --noexpiry
   changed_when: False
 
-- name: "Set default password expiration period and minimum length"
+- name: "DC | Set default password expiration period and minimum length"
   command: |
     samba-tool domain passwordsettings set
-    --complexity={{ samba_ad.complexity }}
-    --min-pwd-age={{ samba_ad.min_pwd_age }}
-    --max-pwd-age={{ samba_ad.max_pwd_age }}
-    --min-pwd-length={{ samba_ad.min_pwd_len }}
-    --history-length={{ samba_ad.history_len }}
+    --complexity={{ samba_ad_pwd_complexity }}
+    --min-pwd-age={{ samba_ad_pwd_min_age }}
+    --max-pwd-age={{ samba_ad_pwd_max_age }}
+    --min-pwd-length={{ samba_ad_pwd_min_len }}
+    --history-length={{ samba_ad_pwd_history_len }}
   changed_when: False
-
-- name: "Create domain users"
-  command: "samba-tool user create {{ item.name }} {{ item.password }}"
-  loop: "{{ samba_users }}"
-  register: samba_user_result
-  changed_when: ("successfully" in samba_user_result.stdout)
-  failed_when: samba_user_result.rc > 0
-    and not ("exists" in samba_user_result.stderr)
-
-- name: "Create domain groups"
-  command: "samba-tool group add {{ item.name }}"
-  loop: "{{ samba_groups }}"
-  register: samba_group_result
-  changed_when: ("successfully" in samba_group_result.stdout)
-  failed_when: samba_group_result.rc > 0
-    and not ("exists" in samba_group_result.stderr)
-
-- name: "Add Domain Group Members"
-  command: "samba-tool group addmembers {{ item.name }} {{ item.members | join(',') }}"
-  loop: "{{ samba_groups }}"
-  register: samba_member_result
-  changed_when: False
-  failed_when: samba_member_result.rc > 0
-    and not ("exists" in samba_member_result.stderr)
-

@@ -1,0 +1,14 @@
+---
+# role: ansible-role-samba
+# file: tasks/users.yml
+
+- name: "AD | Users"
+  block:
+    - name: "Create domain users"
+      command: "samba-tool user create {{ item.name }} {{ item.password }}"
+      loop: "{{ samba_users }}"
+      register: samba_user_result
+      changed_when: ("successfully" in samba_user_result.stdout)
+      failed_when: samba_user_result.rc > 0
+        and not ("exists" in samba_user_result.stderr)
+  when: samba_role == 'domain controller'

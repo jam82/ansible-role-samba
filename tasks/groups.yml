@@ -1,0 +1,22 @@
+---
+# role: ansible-role-samba
+# file: tasks/groups.yml
+
+- name: "AD | Groups"
+  block:
+    - name: "Create domain groups"
+      command: "samba-tool group add {{ item.name }}"
+      loop: "{{ samba_groups }}"
+      register: samba_group_result
+      changed_when: ("successfully" in samba_group_result.stdout)
+      failed_when: samba_group_result.rc > 0
+        and not ("exists" in samba_group_result.stderr)
+
+    - name: "Add Domain Group Members"
+      command: "samba-tool group addmembers {{ item.name }} {{ item.members | join(',') }}"
+      loop: "{{ samba_groups }}"
+      register: samba_member_result
+      changed_when: False
+      failed_when: samba_member_result.rc > 0
+        and not ("exists" in samba_member_result.stderr)
+  when: samba_role == 'domain controller'

@@ -13,43 +13,96 @@ samba_role_enabled: False
 # "domain controller" => ad domain controller
 samba_role: "standolone server"
 
+# Name of the ansible inventory group of domain controllers.
+# This is used for multi dc installation, or to generate a list of nameservers
+# for domain members. You should always set this, when also installing members.
+# AFFECTED SAMBA_ROLES: domain controller, domain member
+samba_dc_inventory_group_name: "samba_dcs"
+
 # This uses the ansible fact ansible_domain as samba_domain/realm by default.
 # Upper and lowercase conversion is done automatically as needed.
 # E.g. your domain is homebase.lan, then this is samba domain/realm.
 # If ansible_domain = home.example.com, this is it, and so on...
+# NOTE: This variable is used to derive all the necessary samba variables.
+#       So setting this correctly should be enough.
+# AFFECTED SAMBA_ROLES: domain controller, domain member, standalone server
 samba_domain: "{{ ansible_domain | d(ansible_hostname) }}"
 
 # This uses the first part of ansible_domain as workgroup/ad domain.
 # Upper and lowercase conversion is done automatically as needed.
-# For domain homebase.lan, homebase is your workgroup.
-# For home.example.com, home is your workgroup/ad domain.
+# E.g. for domain homebase.lan, homebase is your workgroup.
+# AFFECTED SAMBA_ROLES: domain controller, domain member, standalone server
 samba_workgroup: "{{ samba_domain | regex_replace('^(.*)\\.(.*)', '\\1') }}"
 
-# Active Directory parameters for setting up samba as AD DC/Member as dict.
-samba_ad:
-  admin_password: "Chang3MeN0w!"
-  dns_backend: 'SAMBA_INTERNAL'  # can be SAMBA_INTERNAL or BIND9_DLZ
-  dns_forwarder: '9.9.9.9'
-  dns_nameservers:
-    - "{{ ansible_default_ipv4.address }}"  # List: IP of DC or multiple DC IPs.
-  domain: "{{ samba_workgroup }}"
-  realm: "{{ samba_domain }}"
-  site: "{{ samba_domain | regex_replace('^(.*)\\.(.*)', '\\2') }}"
-  complexity: 'on'
-  min_pwd_age: 1
-  max_pwd_age: 768
-  min_pwd_len: 12
-  history_len: 10
+# Bind only to interfaces defined in list samba_interfaces.
+# AFFECTED SAMBA_ROLES: domain controller, domain member, standalone server
+samba_bind_interfaces_only: False
 
+# Interfaces to bind to. NOTE: loopback must be included on DCs.
+# AFFECTED SAMBA_ROLES: domain controller, domain member, standalone server
+samba_interfaces: "{{ ansible_interfaces }}"
+#  - eth0
+
+# Password of Active Directory Administrator account.
+# AFFECTED SAMBA_ROLES: domain controller, domain member (for join)
+samba_ad_admin_password: "Chang3MeN0w!"
+
+# Samba DNS Backend to use in provision command.
+# AFFECTED SAMBA_ROLES: domain controller
+samba_ad_dns_backend: 'SAMBA_INTERNAL'  # can be SAMBA_INTERNAL or BIND9_DLZ
+
+# DNS Forwarder on domain controllers.
+# AFFECTED SAMBA_ROLES: domain controller
+samba_ad_dns_forwarder: '9.9.9.9'
+
+# Active directory domain, e.g. if home.test.lan is your samba_domain,
+# home is your ad domain.
+# AFFECTED SAMBA_ROLES: domain controller, domain member
+samba_ad_domain: "{{ samba_workgroup }}"
+
+# The Kerberos realm, e.g. when home.test.lan is your samba_domain,
+# this in uppercase is your kerberos realm. Uppercase conversion is done in
+# the code, when needed.
+# AFFECTED SAMBA_ROLES: domain controller, domain member
+samba_ad_realm: "{{ samba_domain }}"
+
+# Enable a default site in AD, e.g. when home.test.lan is your samba_domain,
+# test.lan is the default site.
+# AFFECTED SAMBA_ROLES: domain controller
+samba_ad_site_enabled: False
+samba_ad_site: "{{ samba_domain | regex_replace('^(.*)\\.(.*)', '\\2') }}"
+
+# Password settings for domain.
+# AFFECTED SAMBA_ROLES: domain controller
+samba_ad_pwd_complexity: 'on'
+samba_ad_pwd_min_age: 1
+samba_ad_pwd_max_age: 768
+samba_ad_pwd_min_len: 12
+samba_ad_pwd_history_len: 10
+
+# Enable authentication via keytab for GSSAPI Authentication
+samba_ad_keytab_enabled: True
+
+# Groups to create.
+# AFFECTED SAMBA_ROLES: domain controller, standalone server
 samba_groups: []
 # - name: test-group01
 #   members:
 #     - test01
 #     - test02
 
+# Users to create.
+# AFFECTED SAMBA_ROLES: domain controller, standalone server
 samba_users: []
 # - name: test01
-#   password: Sup3rS@fe!
-#   mustchange: true
+#   password: Sup3rS@fe123!
 # - name: test02
-#   password: Sup3rS@fe!
+#   password: Sup3rS@fe123!
+
+# The root for your shares, following FSH.
+# AFFECTED SAMBA_ROLES: domain member, standalone server
+samba_share_root: /srv/samba
+
+# Share definitions (inside root_share folder when relative path).
+# AFFECTED SAMBA_ROLES: domain member, standalone server
+samba_shares: []

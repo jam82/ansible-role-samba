@@ -2,12 +2,14 @@
 # vi: ft=conf
 # {{ ansible_managed }}
 
+{% set samba_nameservers = groups[samba_dc_inventory_group_name] | map('extract', hostvars, ['ansible_default_ipv4.address']) | list %}
+
 domain {{ samba_domain | lower }}
 search {{ samba_domain | lower }}
 {% if samba_role == 'domain controller'%}
 nameserver 127.0.0.1
 {% else %}
-{% for nameserver in samba_ad.dns_nameservers %}
+{% for nameserver in samba_nameservers %}
 nameserver {{ nameserver }}
 {% endfor %}
 {% endif %}

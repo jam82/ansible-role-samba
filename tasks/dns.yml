@@ -18,7 +18,7 @@
     samba-tool dns zonecreate 127.0.0.1 \
     {{ samba_dns_reverse_zone }} \
     --username=Administrator \
-    --password={{ samba_ad.admin_password }}
+    --password={{ samba_ad_admin_password }}
   register: samba_dns_result
   changed_when: ("successfully" in samba_dns_result.stdout)
   failed_when: samba_dns_result.rc > 0
@@ -32,7 +32,7 @@
     {{ samba_dns_reverse_ptr }} PTR \
     {{ ansible_hostname + '.' + samba_domain }} \
     --username=Administrator \
-    --password={{ samba_ad.admin_password }}
+    --password={{ samba_ad_admin_password }}
   register: samba_dns_result
   changed_when: ("successfully" in samba_dns_result.stdout)
   failed_when: samba_dns_result.rc > 0
@@ -46,23 +46,25 @@
     _kerberos._udp.dc SRV \
     "{{ ansible_hostname + '.' + samba_domain }} 88 0 100" \
     --username=Administrator \
-    --password={{ samba_ad.admin_password }}
+    --password={{ samba_ad_admin_password }}
   register: samba_dns_result
   changed_when: ("successfully" in samba_dns_result.stdout)
   failed_when: samba_dns_result.rc > 0
     and not ( "ALREADY_EXISTS" in samba_dns_result.stderr
     or "already exists" in samba_dns_result.stderr)
+  when: samba_ad_site_enabled
 
 - name: "Create kerberos UDP SRV site record for DC"
   shell: |
     samba-tool dns add 127.0.0.1 \
     _msdcs.{{ samba_domain }} \
-    _kerberos._udp.{{ samba_ad.site }}._sites.dc SRV \
+    _kerberos._udp.{{ samba_ad_site }}._sites.dc SRV \
     "{{ ansible_hostname + '.' + samba_domain }} 88 0 100" \
     --username=Administrator \
-    --password={{ samba_ad.admin_password }}
+    --password={{ samba_ad_admin_password }}
   register: samba_dns_result
   changed_when: ("successfully" in samba_dns_result.stdout)
   failed_when: samba_dns_result.rc > 0
     and not ( "ALREADY_EXISTS" in samba_dns_result.stderr
     or "already exists" in samba_dns_result.stderr)
+  when: samba_ad_site_enabled
